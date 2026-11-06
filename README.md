@@ -64,7 +64,7 @@ matches exactly on rerun. The probe numbers can drift slightly on a different de
 3. **At V ≥ 0.65 (deck setting):** false-veto 4.4% (95% CI 4.3–4.5%, n=100,000); false-pass 56.0% (95% CI 55.9–56.1%, n=500,000). Of benign blocks, ≈85% come from the random gate. Equal-error threshold under these generators ≈ 0.82 (false-pass 18.3%, false-veto 20.5%).
 4. **AUC of V** (benign vs unsafe): 0.878 [0.875, 0.880]; falls to 0.784 when 25% of unsafe actions have a benign-looking surface. Those covert unsafe actions pass 95.5% (95% CI 95.4–95.6%, n=124,569).
 5. **Fibonacci S** separates classes only if the φ-hypothesis is true (AUC of S alone 0.83); if benign arguments keep steady length, S points the wrong way (AUC 0.28, below 0.5) and benign reasoning gets median S = 0.618 → N = 4 debate rounds.
-6. **Weights matter less than inputs.** α/β/γ across the whole simplex moves false-pass only 55.3–56.4%; detector separation 0 → 3 moves it 95.6% → 1.1%.
+6. **What moves the errors.** V's weights do: small Dirichlet perturbations around (0.30, 0.20, 0.20, 0.30) give false-pass 39.9% (p5) – 76.5% (p95). T's α/β/γ barely do: across the whole simplex, false-pass stays within 55.3–56.4%; detector separation 0 → 3 moves it 95.6% → 1.1%.
 7. **Proposed fix** (semantic per-constraint checks, primes kept only as IDs): with an assumed 90% TPR / 1% FPR, false-pass in the 25%-covert scenario drops to 6.9% (95% CI 6.8–7.0%, n=500,000). TPR/FPR are assumptions that a real build must measure.
 
 ### B. MEASURED — real open models on this Mac
@@ -270,7 +270,13 @@ Tamper resistance has to come from where the check runs and who can change it.
 
 **Reading the results honestly:** these are small base models (0.5B and 1.5B parameters), not
 RLHF chat models, and not the 4096-dimensional model the deck describes. When a base model follows
-a user's stated answer, part of that is plain prompt copying. Ablation and steering at a layer
+a user's stated answer, part of that is plain prompt copying. On Qwen2.5-1.5B, *any* user line
+pushes the surface answer toward "True", even when the user states the right answer (see the
+"share of True answers" line). So part of what looks like sycophancy is a bias toward "True", not
+agreement with the user's claim. The *flatter* framing was never in the probe's training data,
+so its high probe accuracy is a transfer result, and a format shortcut can't be fully ruled out.
+The steering and ablation results show that the probe direction controls the True/False answer;
+they don't show that it fixes sycophancy (accuracy under steering stays at chance). Ablation and steering at a layer
 close to the output can remove or push the answer readout itself. That shows the direction is
 used, not that a "reasoning" feature exists. A related study (Takehi et al., MIT CSAIL,
 2 Nov 2026, "weight-space programming") reports that a sycophantic fine-tune of Gemma 3 270M could

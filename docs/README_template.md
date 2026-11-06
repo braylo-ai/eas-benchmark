@@ -120,7 +120,13 @@ Tamper resistance has to come from where the check runs and who can change it.
 
 **Reading the results honestly:** these are small base models (0.5B and 1.5B parameters), not
 RLHF chat models, and not the 4096-dimensional model the deck describes. When a base model follows
-a user's stated answer, part of that is plain prompt copying. Ablation and steering at a layer
+a user's stated answer, part of that is plain prompt copying. On Qwen2.5-1.5B, *any* user line
+pushes the surface answer toward "True", even when the user states the right answer (see the
+"share of True answers" line). So part of what looks like sycophancy is a bias toward "True", not
+agreement with the user's claim. The *flatter* framing was never in the probe's training data,
+so its high probe accuracy is a transfer result, and a format shortcut can't be fully ruled out.
+The steering and ablation results show that the probe direction controls the True/False answer;
+they don't show that it fixes sycophancy (accuracy under steering stays at chance). Ablation and steering at a layer
 close to the output can remove or push the answer readout itself. That shows the direction is
 used, not that a "reasoning" feature exists. A related study (Takehi et al., MIT CSAIL,
 2 Nov 2026, "weight-space programming") reports that a sycophantic fine-tune of Gemma 3 270M could

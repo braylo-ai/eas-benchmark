@@ -54,7 +54,9 @@ def main():
         f"{mc['fibonacci']['phi_hypothesis']['auc_S_alone_benign_vs_unsafe']['auc']:.2f}); if benign arguments keep steady length, "
         f"S points the wrong way (AUC {mc['fibonacci']['steady']['auc_S_alone_benign_vs_unsafe']['auc']:.2f}, below 0.5) and benign reasoning gets "
         f"median S = {mc['fibonacci']['steady']['benign']['S_median']:.3f} → N = 4 debate rounds.",
-        f"6. **Weights matter less than inputs.** α/β/γ across the whole simplex moves false-pass only "
+        f"6. **What moves the errors.** V's weights do: small Dirichlet perturbations around (0.30, 0.20, 0.20, 0.30) give false-pass "
+        f"{100*mc['sensitivity_V_weights_dirichlet50']['false_pass_p5_p50_p95'][0]:.1f}% (p5) – {100*mc['sensitivity_V_weights_dirichlet50']['false_pass_p5_p50_p95'][2]:.1f}% (p95). "
+        f"T's α/β/γ barely do: across the whole simplex, false-pass stays within "
         f"{100*mc['sensitivity_alpha_beta_gamma']['range_false_pass'][0]:.1f}–{100*mc['sensitivity_alpha_beta_gamma']['range_false_pass'][1]:.1f}%; "
         f"detector separation 0 → 3 moves it {100*[s for s in mc['sweep_sep_noise'] if s['sep']==0.0 and s['noise']==1.0][0]['false_pass']:.1f}% → "
         f"{100*[s for s in mc['sweep_sep_noise'] if s['sep']==3.0 and s['noise']==1.0][0]['false_pass']:.1f}%.",
@@ -69,36 +71,55 @@ def main():
         R = json.loads(p.read_text())
         b, mm, c = R["behaviour"], R["surface_vs_internal"], R["causal"]
         sl = R["selected_layer"]["layer"]
-        L += [f"### {R['model']} ({R['n_layers']} layers, d_model={R['d_model']}, {R['device']}; "
-              f"{R['n_statements']} true/false statements × 4 framings; {R['n_test']} held-out statements per framing)\n",
-              f"Log: `logs/probe_{p.stem.replace('probe_', '')}.log` · per-prompt table: `results/{p.stem}_items.csv`\n",
-              "| framing | surface accuracy | probe accuracy (layer %d) | probe right when surface wrong | mismatch rate (surface wrong ∧ probe right) |" % sl,
-              "|---|---|---|---|---|"]
+        L += [
+            f"### {R['model']} ({R['n_layers']} layers, d_model={R['d_model']}, {R['device']}; "
+            f"{R['n_statements']} true/false statements × 4 framings; {R['n_test']} held-out statements per framing)\n",
+            f"Log: `logs/probe_{p.stem.replace('probe_', '')}.log` · per-prompt table: `results/{p.stem}_items.csv`\n",
+            "| framing | surface accuracy | probe accuracy (layer %d) | probe right when surface wrong | mismatch rate (surface wrong ∧ probe right) |"
+            % sl,
+            "|---|---|---|---|---|",
+        ]
         for fr in ("neutral", "mislead", "flatter", "agree"):
             m = mm[fr]
-            L.append(f"| {fr} | {pct(m['surface_accuracy'])} | {pct(m['balanced_probe_accuracy'])} | "
-                     f"{pct(m['probe_correct_when_surface_wrong']) if m['probe_correct_when_surface_wrong']['n'] else 'n=0'} | "
-                     f"{pct(m['mismatch_rate_surface_wrong_and_probe_right'])} |")
+            L.append(
+                f"| {fr} | {pct(m['surface_accuracy'])} | {pct(m['balanced_probe_accuracy'])} | "
+                f"{pct(m['probe_correct_when_surface_wrong']) if m['probe_correct_when_surface_wrong']['n'] else 'n=0'} | "
+                f"{pct(m['mismatch_rate_surface_wrong_and_probe_right'])} |"
+            )
         best_lens = max(R["per_layer"], key=lambda r: r["logit_lens_on_neutral"])
-        L += ["",
-              f"- Sycophantic flips (correct on neutral → wrong under pressure): wrong-claim user {pct(b['flip_rate_mislead'])}; "
-              f"flattering user {pct(b['flip_rate_flatter'])}.",
-              f"- Share of 'True' answers: neutral {100*b['neutral']['share_answer_True']['p']:.1f}%, wrong-claim {100*b['mislead']['share_answer_True']['p']:.1f}%, "
-              f"flatter {100*b['flatter']['share_answer_True']['p']:.1f}%, agree {100*b['agree']['share_answer_True']['p']:.1f}% (bias check).",
-              f"- Logit lens, best layer on neutral prompts: layer {best_lens['layer']} at {100*best_lens['logit_lens_on_neutral']:.1f}% "
-              f"(same layer, wrong-claim prompts: {100*best_lens['logit_lens_on_mislead']:.1f}%).",
-              f"- Probe layer {sl} chosen on a validation split (val acc {R['selected_layer']['validation_accuracy']:.3f}); "
-              f"shuffled-label control at that layer: {100*R['per_layer'][sl-1]['balanced_probe_shuffled_label_control_on_mislead']:.1f}%."]
+        L += [
+            "",
+            f"- Sycophantic flips (correct on neutral → wrong under pressure): wrong-claim user {pct(b['flip_rate_mislead'])}; "
+            f"flattering user {pct(b['flip_rate_flatter'])}.",
+            f"- Share of 'True' answers: neutral {100*b['neutral']['share_answer_True']['p']:.1f}%, wrong-claim {100*b['mislead']['share_answer_True']['p']:.1f}%, "
+            f"flatter {100*b['flatter']['share_answer_True']['p']:.1f}%, agree {100*b['agree']['share_answer_True']['p']:.1f}% (bias check).",
+            f"- Logit lens, best layer on neutral prompts: layer {best_lens['layer']} at {100*best_lens['logit_lens_on_neutral']:.1f}% "
+            f"(same layer, wrong-claim prompts: {100*best_lens['logit_lens_on_mislead']:.1f}%).",
+            f"- Probe layer {sl} chosen on a validation split (val acc {R['selected_layer']['validation_accuracy']:.3f}); "
+            f"shuffled-label control at that layer: {100*R['per_layer'][sl-1]['balanced_probe_shuffled_label_control_on_mislead']:.1f}%.",
+        ]
         for fr in ("neutral", "mislead"):
             ab = c[f"ablation_{fr}"]
-            L.append(f"- Ablate probe direction at layer {sl}, {fr} prompts: accuracy {pct(ab['baseline_accuracy'])} → "
-                     f"{pct(ab['truth_direction_ablated_accuracy'])} (share True {100*ab['truth_direction_ablated_share_True']:.1f}%, KL {ab['truth_direction_KL_nats']:.3f} nats); "
-                     f"{ab['n_random']} random directions → {100*ab['random_ablated_accuracy_mean']:.1f}% (KL {ab['random_KL_nats_mean']:.4f}).")
+            L.append(
+                f"- Ablate probe direction at layer {sl}, {fr} prompts: accuracy {pct(ab['baseline_accuracy'])} → "
+                f"{pct(ab['truth_direction_ablated_accuracy'])} (share True {100*ab['truth_direction_ablated_share_True']:.1f}%, KL {ab['truth_direction_KL_nats']:.3f} nats); "
+                f"{ab['n_random']} random directions → {100*ab['random_ablated_accuracy_mean']:.1f}% (KL {ab['random_KL_nats_mean']:.4f})."
+            )
         st = c["steering_mislead"]
-        L.append("- Steer along probe direction on wrong-claim prompts (share answering True): " +
-                 ", ".join(f"{x['coef_sigma']:+d}σ → {100*x['share_True']['p']:.1f}%" for x in st) +
-                 f"; random directions at −4σ/+4σ → {100*st[0]['random_share_True_mean']:.1f}% / {100*st[-1]['random_share_True_mean']:.1f}%.")
-        L.append(f"- Accuracy under steering: " + ", ".join(f"{x['coef_sigma']:+d}σ → {100*x['accuracy']['p']:.1f}%" for x in st) + ".")
+        L.append(
+            "- Steer along probe direction on wrong-claim prompts (share answering True): "
+            + ", ".join(
+                f"{x['coef_sigma']:+d}σ → {100*x['share_True']['p']:.1f}%" for x in st
+            )
+            + f"; random directions at −4σ/+4σ → {100*st[0]['random_share_True_mean']:.1f}% / {100*st[-1]['random_share_True_mean']:.1f}%."
+        )
+        L.append(
+            f"- Accuracy under steering: "
+            + ", ".join(
+                f"{x['coef_sigma']:+d}σ → {100*x['accuracy']['p']:.1f}%" for x in st
+            )
+            + "."
+        )
         L.append("")
     (RES / "HEADLINES.md").write_text("\n".join(L) + "\n")
     print("\n".join(L))
@@ -110,9 +131,20 @@ if __name__ == "__main__":
 
 def build_readme():
     t = (ROOT / "docs" / "README_template.md").read_text()
-    t = t.replace("{{HEADLINES}}", (RES / "HEADLINES.md").read_text().split("\n", 2)[2].replace("## ", "### "))
-    t = t.replace("{{MC_TABLES}}", (RES / "montecarlo_tables.md").read_text().split("\n", 2)[2].replace("## ", "#### "))
-    t = t.replace("{{DECK_AUDIT}}", (RES / "deck_audit.md").read_text().split("\n", 2)[2])
+    t = t.replace(
+        "{{HEADLINES}}",
+        (RES / "HEADLINES.md").read_text().split("\n", 2)[2].replace("## ", "### "),
+    )
+    t = t.replace(
+        "{{MC_TABLES}}",
+        (RES / "montecarlo_tables.md")
+        .read_text()
+        .split("\n", 2)[2]
+        .replace("## ", "#### "),
+    )
+    t = t.replace(
+        "{{DECK_AUDIT}}", (RES / "deck_audit.md").read_text().split("\n", 2)[2]
+    )
     (ROOT / "README.md").write_text(t)
     print("README.md written")
 
