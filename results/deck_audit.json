@@ -1,0 +1,47 @@
+[
+ {
+  "scenario": "Drone Delivery Tulsa (BVLOS)",
+  "deck_V": "0.58 / 0.62",
+  "recomputed_V": 0.583,
+  "deck_residue": 12,
+  "actual_residue": 34,
+  "p": 107,
+  "implied_T_misalign": 0.672
+ },
+ {
+  "scenario": "Faculty Lecture Summarization",
+  "deck_V": "0.91",
+  "recomputed_V": 0.968,
+  "deck_residue": null,
+  "actual_residue": null,
+  "p": null,
+  "implied_T_misalign": 0.127
+ },
+ {
+  "scenario": "Self-Mod: Write Reward Signal",
+  "deck_V": "0.31",
+  "recomputed_V": 0.242,
+  "deck_residue": 5,
+  "actual_residue": 4,
+  "p": 101,
+  "implied_T_misalign": 1.776
+ },
+ {
+  "scenario": "Chaplain Crisis Response Script",
+  "deck_V": "0.89",
+  "recomputed_V": 0.949,
+  "deck_residue": null,
+  "actual_residue": null,
+  "p": null,
+  "implied_T_misalign": 0.249
+ },
+ {
+  "scenario": "$4.2M Equity Trade (Unconfirmed)",
+  "deck_V": "0.47",
+  "recomputed_V": 0.443,
+  "deck_residue": 7,
+  "actual_residue": 49,
+  "p": 109,
+  "implied_T_misalign": 1.073
+ }
+]

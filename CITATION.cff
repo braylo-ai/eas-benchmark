@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this benchmark, please cite it as below."
+title: "Empirical AI Safety (EAS) Benchmark: a reproducible stress test of the PPL verification engine"
+authors:
+  - family-names: Lopez
+    given-names: Brandon M.
+    affiliation: "Braylo SI"
+version: 0.1.0
+date-released: 2026-11-06
+license: MIT
+repository-code: "https://github.com/braylo777/eas-benchmark"
+keywords: [AI safety, interpretability, linear probes, logit lens, Monte Carlo, verification]

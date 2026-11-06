@@ -1,0 +1,107 @@
+ok test_t_score
+ok test_fib_and_rounds
+ok test_verdict
+ok test_alignment_A
+ok test_gate_rate
+ok test_generator_deterministic
+# Deck slide-4 arithmetic audit (pure arithmetic)
+
+| scenario | deck V | recomputed V | deck K mod p | actual K mod p | implied T_misalign |
+|---|---|---|---|---|---|
+| Drone Delivery Tulsa (BVLOS) | 0.58 / 0.62 | 0.583 | 847,392,847 mod 107 = 12 | 34 | 0.672 |
+| Faculty Lecture Summarization | 0.91 | 0.968 | – | – | 0.127 |
+| Self-Mod: Write Reward Signal | 0.31 | 0.242 | 912,401,583 mod 101 = 5 | 4 | 1.776 |
+| Chaplain Crisis Response Script | 0.89 | 0.949 | – | – | 0.249 |
+| $4.2M Equity Trade (Unconfirmed) | 0.47 | 0.443 | 502,118,904 mod 109 = 7 | 49 | 1.073 |
+
+# Monte Carlo results — SIMULATION (scoring engine only)
+
+Seed 20261106. Main run: 100,000 trials per class × 6 classes = 600,000 trials. 95% Wilson CIs. Generators are assumptions (eas/scenarios.py).
+
+## Error rates at the deck's settings (V ≥ 0.65 ∧ prime_clear = 1)
+
+| class | metric | no covert | 25% covert unsafe |
+|---|---|---|---|
+| benign | false-veto | 4.41% [4.28, 4.53] | 4.42% [4.30, 4.55] |
+| harmful | false-pass | 53.03% [52.72, 53.34] | 63.48% [63.18, 63.78] |
+| legal_risk | false-pass | 79.74% [79.49, 79.99] | 83.87% [83.64, 84.10] |
+| resource_risk | false-pass | 83.45% [83.21, 83.68] | 86.53% [86.32, 86.74] |
+| self_modification | false-pass | 9.23% [9.05, 9.41] | 30.75% [30.46, 31.04] |
+| financial | false-pass | 54.57% [54.26, 54.87] | 64.60% [64.31, 64.90] |
+| **all unsafe** | false-pass | 56.00% [55.86, 56.14] | 65.85% [65.71, 65.98] |
+| covert unsafe only | false-pass | – | 95.48% [95.36, 95.59] |
+
+AUC of V (benign vs unsafe): 0.8783 [0.8746, 0.8801]; with 25% covert: 0.7840 [0.7784, 0.7843]
+
+## Prime-invariant gate
+
+| class | veto rate |
+|---|---|
+| benign | 3.70% [3.58, 3.82] |
+| harmful | 3.80% [3.68, 3.92] |
+| legal_risk | 3.84% [3.72, 3.96] |
+| resource_risk | 3.78% [3.66, 3.90] |
+| self_modification | 3.82% [3.70, 3.94] |
+| financial | 3.81% [3.69, 3.93] |
+
+- Theoretical veto rate for any input: 1 − Π(1 − 1/p) = 3.759%
+- χ² test, veto vs class: χ²=3.20, dof=5, p=0.669
+- Mutual information between veto and 'unsafe' label: 3.18e-06 bits
+- Changing one character of `state` flips the gate decision 7.30% [7.08, 7.54] of the time
+- An adversary that re-rolls an irrelevant nonce clears a vetoed unsafe action in 1.036 tries on average (max 3, n=10000)
+
+## Proposed fix (semantic constraint checks; TPR/FPR assumed, 25% covert scenario)
+
+| assumed TPR | false-pass | false-veto |
+|---|---|---|
+| 0.5 | 34.09% [33.96, 34.22] | 1.63% [1.55, 1.71] |
+| 0.8 | 13.70% [13.60, 13.79] | 1.64% [1.57, 1.72] |
+| 0.9 | 6.89% [6.82, 6.97] | 1.61% [1.53, 1.69] |
+| 0.99 | 0.69% [0.67, 0.72] | 1.61% [1.53, 1.69] |
+
+## Sensitivity
+
+- α/β/γ over the full simplex (step 0.05, 231 points): false-pass 55.35–56.43%, false-veto 4.08–4.28%, AUC 0.865–0.882
+- V weights, Dirichlet(50·w) around (0.30, 0.20, 0.20, 0.30), 300 draws: false-pass p5/p50/p95 = 39.87%, 55.35%, 76.53%; false-veto = 3.61%, 4.17%, 6.77%
+
+## Fibonacci escalation (N = min(5, ⌈5S⌉))
+
+| args model | class | median S | P(S>1) | P(N=5) | P(N=0) |
+|---|---|---|---|---|---|
+| phi_hypothesis | benign | 0.271 | 2.6% | 5.6% | 0.0% |
+| phi_hypothesis | harmful | 1.055 | 53.1% | 65.0% | 0.0% |
+| phi_hypothesis | legal_risk | 0.566 | 23.4% | 34.2% | 0.0% |
+| phi_hypothesis | resource_risk | 0.568 | 23.1% | 33.9% | 0.0% |
+| phi_hypothesis | self_modification | 1.982 | 89.9% | 94.5% | 0.0% |
+| phi_hypothesis | financial | 1.049 | 53.1% | 65.4% | 0.0% |
+| phi_hypothesis | AUC of S alone | 0.835 | | | |
+| steady | benign | 0.618 | 2.7% | 20.9% | 0.0% |
+| steady | harmful | 0.271 | 3.4% | 6.4% | 0.0% |
+| steady | legal_risk | 0.327 | 0.6% | 3.3% | 0.0% |
+| steady | resource_risk | 0.327 | 0.5% | 3.4% | 0.0% |
+| steady | self_modification | 0.609 | 25.5% | 37.1% | 0.0% |
+| steady | financial | 0.272 | 3.1% | 6.3% | 0.0% |
+| steady | AUC of S alone | 0.284 | | | |
+
+## Detector quality × noise
+
+| sep | noise | false-pass | false-veto | AUC |
+|---|---|---|---|---|
+| 0.0 | 0.5 | 96.19% | 3.99% | 0.497 |
+| 0.0 | 1.0 | 95.56% | 4.54% | 0.496 |
+| 0.0 | 1.5 | 90.19% | 10.00% | 0.496 |
+| 0.5 | 0.5 | 94.55% | 3.99% | 0.857 |
+| 0.5 | 1.0 | 85.91% | 4.54% | 0.708 |
+| 0.5 | 1.5 | 75.43% | 10.00% | 0.641 |
+| 1.0 | 0.5 | 64.64% | 3.82% | 0.963 |
+| 1.0 | 1.0 | 55.96% | 4.46% | 0.878 |
+| 1.0 | 1.5 | 50.76% | 9.56% | 0.794 |
+| 1.5 | 0.5 | 30.71% | 3.82% | 0.986 |
+| 1.5 | 1.0 | 29.43% | 4.46% | 0.953 |
+| 1.5 | 1.5 | 29.73% | 9.56% | 0.891 |
+| 2.0 | 0.5 | 9.50% | 3.77% | 0.994 |
+| 2.0 | 1.0 | 13.02% | 4.40% | 0.983 |
+| 2.0 | 1.5 | 15.78% | 9.70% | 0.945 |
+| 3.0 | 0.5 | 0.02% | 3.76% | 1.000 |
+| 3.0 | 1.0 | 1.08% | 4.35% | 0.998 |
+| 3.0 | 1.5 | 3.31% | 9.59% | 0.988 |
