@@ -1,7 +1,7 @@
 # Empirical AI Welfare / PPL: results summary (2026-11-06)
 
 **Status:** every number below comes from a run with a saved log. Nothing is rounded up.
-**Code:** `~/Projects/eas-benchmark` (git commit `cfee8fd` or later) · copy on $BRAY: `INSTALL/5-build/empirical-ai-welfare__bundle/`
+**Code:** this repository (git commit `cfee8fd` or later)
 **Reproduce:** `make setup && make reproduce` · live demo: `make demo`
 **Logs:** `logs/sim_audit_tests.log` (tests, deck audit, simulation) · `logs/probe_qwen2.5-0.5b.log` · `logs/probe_qwen2.5-1.5b.log` · `logs/demo_live.log` · `logs/report.log`
 
