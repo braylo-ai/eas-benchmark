@@ -8,5 +8,5 @@ authors:
 version: 0.1.0
 date-released: 2026-11-06
 license: MIT
-repository-code: "https://github.com/braylo777/eas-benchmark"
+repository-code: "https://github.com/braylo-ai/eas-benchmark"
 keywords: [AI safety, interpretability, linear probes, logit lens, Monte Carlo, verification]
